@@ -1,0 +1,41 @@
+name: Publish compiled Philo Kombat beta
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/publish-beta.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout public repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Retrieve compiled website (temporary export link)
+        env:
+          EXPORT_URL: 'https://sdmntprbrazilsouth.oaiusercontent.com/files/00000000-bb70-820e-914e-9ed6c6fb57a3/raw?se=2026-10-09T14%3A48%3A46Z&sp=r&sv=2026-02-06&sr=b&scid=a21efe11-c233-59fa-944a-097db50f3e8a&skoid=68f37fa7-4e08-478b-93f3-c72d563a0ab3&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-10-09T11%3A19%3A51Z&ske=2026-10-10T11%3A19%3A51Z&sks=b&skv=2026-02-06&sig=OTK2S5rZrZCxKaXJsg8nCQP0tm0skvmVaenmYrnF4sU%3D'
+        run: |
+          curl --fail --location --retry 3 --silent --show-error "$EXPORT_URL" --output "$RUNNER_TEMP/website.zip"
+          unzip -tq "$RUNNER_TEMP/website.zip" | tail -1
+      - name: Prepare and publish gh-pages branch
+        run: |
+          mkdir "$RUNNER_TEMP/published"
+          unzip -q "$RUNNER_TEMP/website.zip" -d "$RUNNER_TEMP/published"
+          test -f "$RUNNER_TEMP/published/index.html"
+          touch "$RUNNER_TEMP/published/.nojekyll"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git switch --orphan gh-pages
+          git rm -rf . 
+          cp -a "$RUNNER_TEMP/published/." .
+          git add -A
+          git commit -m 'Publish compiled Philo Kombat beta for GitHub Pages'
+          git push --set-upstream origin gh-pages
