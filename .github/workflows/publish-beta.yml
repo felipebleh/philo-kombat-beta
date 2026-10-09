@@ -34,7 +34,7 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git switch --orphan gh-pages
-          git rm -rf . 
+          git rm -rf . || true
           cp -a "$RUNNER_TEMP/published/." .
           git add -A
           git commit -m 'Publish compiled Philo Kombat beta for GitHub Pages'
